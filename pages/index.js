@@ -5,6 +5,13 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css'; // Import the default styling for Skeleton
 import { useEffect, useState } from 'react';
 
+const MAX_TITLE_LENGTH = 50; // Define the maximum length for the title
+
+const truncateTitle = (title, maxLength) => {
+  if (title.length <= maxLength) return title;
+  return title.slice(0, maxLength) + '...';
+};
+
 const Home = ({ initialPosts }) => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,7 +22,7 @@ const Home = ({ initialPosts }) => {
       setTimeout(async () => {
         setPosts(initialPosts);
         setIsLoading(false);
-      }, 400); // Simulate a 2-second delay
+      }, 400); // Simulate a 400ms delay
     };
 
     loadPosts();
@@ -59,7 +66,9 @@ const Home = ({ initialPosts }) => {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h2 className="text-lg font-semibold text-gray-900">{post.title}</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {truncateTitle(post.title, MAX_TITLE_LENGTH)}
+                    </h2>
                     <p className="text-gray-600 mt-1 text-sm">{relativeDate}</p>
                     <p className="text-gray-700 mt-2 text-sm truncate">{post.excerpt}</p>
                   </div>
