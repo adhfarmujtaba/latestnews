@@ -42,16 +42,16 @@ function MyApp({ Component, pageProps }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
         <AnimatePresence
-          initial={false} // Prevents the initial mount animation
+          initial={false} // Prevents initial mount animation
         >
           <motion.div
             key={router.asPath}
             initial={{ x: direction === 'forward' ? '100%' : '-100%', opacity: 1 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: direction === 'forward' ? '-100%' : '100%', opacity: 0 }}
-            transition={{ type: 'tween', duration: 0.3 }}
+            transition={{ type: 'tween', duration: 0.4 }}
             style={{
               position: 'absolute',
               top: 0,
