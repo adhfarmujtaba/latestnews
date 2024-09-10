@@ -1,9 +1,10 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { fetchPosts } from '../lib/api';
 import { formatDistanceToNow } from 'date-fns';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css'; // Import the default styling for Skeleton
 import { useEffect, useState } from 'react';
+import { fetchPosts } from '../lib/api';
 
 const MAX_TITLE_LENGTH = 50; // Define the maximum length for the title
 
@@ -15,14 +16,21 @@ const truncateTitle = (title, maxLength) => {
 const Home = ({ initialPosts }) => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
 
   useEffect(() => {
     const loadPosts = async () => {
-      // Simulate network delay
-      setTimeout(async () => {
-        setPosts(initialPosts);
-        setIsLoading(false);
-      }, 400); // Simulate a 400ms delay
+      // Set a minimum time to show the skeleton loader
+      const timeoutId = setTimeout(() => {
+        setShowSkeleton(false);
+      }, 400); // Show skeleton for at least 400ms
+
+      // Simulate loading
+      setPosts(initialPosts);
+      setIsLoading(false);
+
+      // Clear timeout if loading is done earlier
+      return () => clearTimeout(timeoutId);
     };
 
     loadPosts();
@@ -33,7 +41,7 @@ const Home = ({ initialPosts }) => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8 text-center text-gray-900">News Website</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {isLoading ? (
+          {isLoading || showSkeleton ? (
             Array(8).fill(null).map((_, index) => (
               <div key={index} className="block bg-white rounded-lg shadow-lg overflow-hidden relative">
                 <Skeleton height={192} />
@@ -53,13 +61,17 @@ const Home = ({ initialPosts }) => {
                 <Link
                   key={post.id}
                   href={`/posts/${post.slug}`}
+                  prefetch // Enable prefetching for faster navigation
                   className="block bg-white rounded-lg shadow-lg overflow-hidden relative transform hover:scale-105 transition-transform duration-300"
                 >
-                  <div className="relative">
-                    <img
+                  <div className="relative w-full h-48">
+                    <Image
                       src={post.image}
                       alt={post.title}
-                      className="w-full h-48 object-cover"
+                      layout="fill"
+                      objectFit="cover"
+                      className="absolute top-0 left-0"
+                      priority // Priority loading for above-the-fold images
                     />
                     <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
                       {post.read_time} min read

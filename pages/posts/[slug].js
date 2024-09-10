@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Image from 'next/image';
 import { fetchPosts } from '../../lib/api';
 import { useRouter } from 'next/router';
 import { AiOutlineArrowLeft } from 'react-icons/ai';
@@ -10,27 +11,31 @@ import 'react-loading-skeleton/dist/skeleton.css';
 const Post = ({ post }) => {
   const router = useRouter();
   const [showBackButton, setShowBackButton] = useState(true);
-  const [lastScrollTop, setLastScrollTop] = useState(0);
   const [loading, setLoading] = useState(true);
   const [skeletonVisible, setSkeletonVisible] = useState(true);
+  const [cameDirectly, setCameDirectly] = useState(true); // New state to track direct access
 
   useEffect(() => {
+    // Check if the user came directly to the page
+    setCameDirectly(!document.referrer || !document.referrer.startsWith(window.location.origin));
+
     const handleScroll = () => {
       const currentScrollTop = window.pageYOffset;
-      setShowBackButton(currentScrollTop < lastScrollTop || currentScrollTop < 100);
-      setLastScrollTop(currentScrollTop <= 0 ? 0 : currentScrollTop);
+      setShowBackButton(currentScrollTop < 100 || window.pageYOffset < 50);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollTop]);
+  }, []);
 
   useEffect(() => {
     if (post) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setSkeletonVisible(false);
         setLoading(false);
       }, 400);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [post]);
 
@@ -47,9 +52,16 @@ const Post = ({ post }) => {
   const currentDomain = getCurrentDomain();
   const postUrl = post ? `${currentDomain}/posts/${post.slug}` : '';
 
-  // Ensure post.image is an absolute URL, add a fallback if not
   const defaultImage = `${currentDomain}/default-image.jpg`; // Replace with your default image URL
   const imageUrl = post && post.image ? post.image : defaultImage;
+
+  const handleBackButtonClick = () => {
+    if (cameDirectly) {
+      router.push('/'); // Redirect to homepage if the user came directly to the page
+    } else {
+      router.back(); // Go back to the previous page
+    }
+  };
 
   return (
     <>
@@ -89,11 +101,16 @@ const Post = ({ post }) => {
           ) : (
             <article className="bg-white rounded-lg shadow-lg overflow-hidden">
               {post.image && (
-                <img
-                  src={post.image}
-                  alt={post.title}
-                  className="w-full h-64 object-cover"
-                />
+                <div className="relative w-full h-64">
+                  <Image
+                    src={imageUrl}
+                    alt={post.title}
+                    layout="fill"
+                    objectFit="cover"
+                    className="absolute top-0 left-0"
+                    priority
+                  />
+                </div>
               )}
               <div className="p-6">
                 <header className="mb-4">
@@ -109,7 +126,7 @@ const Post = ({ post }) => {
           )}
           {showBackButton && (
             <button 
-              onClick={() => router.back()} 
+              onClick={handleBackButtonClick} 
               className="fixed top-4 left-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white p-3 rounded-full shadow-md hover:shadow-lg transition-shadow duration-300"
             >
               <AiOutlineArrowLeft size={24} />
@@ -121,6 +138,7 @@ const Post = ({ post }) => {
   );
 };
 
+// Optimize server-side data fetching
 export async function getServerSideProps({ params }) {
   try {
     const post = await fetchPosts(params.slug);
